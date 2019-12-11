@@ -1,4 +1,4 @@
-/*——————————————————————————————————————————————————————————————————————————————
+/*==============================================================================
 Surround-Sound Bluetooth DSP
 Made by Keith Hussain, with the help of PhD candidate Ethan Castro
  
@@ -9,74 +9,70 @@ This is the main file of the project. The aim of this project is to de-mix and
 playback audio on two different speaker systems simultaneously via Bluetooth. 
 In addition, this project shall be able to apply DSP filters on the audio being 
 played back on the speakers.
-
-Right now the goal is to just take two sound files and play them back 
-simultaneously on the different speaker systems.
-——————————————————————————————————————————————————————————————————————————————*/
-
-#include "stdafx.h"
-#include "inc/fmod.hpp"
+==============================================================================*/
+#include "fmod.hpp"
 #include "common.h"
 
 FMOD_RESULT fetchDriver(FMOD::System *system, int *driver)
 {
-	FMOD_RESULT result;
-	int numdrivers;
-	int selectedindex = 0;
+    FMOD_RESULT result;
+    int numdrivers;
+    int selectedindex = 0;
 
-	result = system->getNumDrivers(&numdrivers);
-	ERRCHECK(result);
+    result = system->getNumDrivers(&numdrivers);
+    ERRCHECK(result);
 
-	if (numdrivers == 0)
-	{
-		result = system->setOutput(FMOD_OUTPUTTYPE_NOSOUND);
-		ERRCHECK(result);
-	}
+    if (numdrivers == 0)
+    {
+        result = system->setOutput(FMOD_OUTPUTTYPE_NOSOUND);
+        ERRCHECK(result);
+    }
 
-	do
-	{
-		Common_Update();
+    do
+    {
+        Common_Update();
 
-		if (Common_BtnPress(BTN_UP) && (selectedindex != 0))
-		{
-			selectedindex--;
-		}
-		if (Common_BtnPress(BTN_DOWN) && (selectedindex != (numdrivers - 1)))
-		{
-			selectedindex++;
-		}
+        if (Common_BtnPress(BTN_UP) && (selectedindex != 0))
+        {
+            selectedindex--;
+        }
+        if (Common_BtnPress(BTN_DOWN) && (selectedindex != (numdrivers - 1)))
+        {
+            selectedindex++;
+        }
 
-		Common_Draw("==================================================");
-		Common_Draw("Multiple System Example.");
-		Common_Draw("Copyright (c) Firelight Technologies 2004-2019.");
-		Common_Draw("==================================================");
-		Common_Draw("");
-		Common_Draw("Choose a device for system: 0x%p", system);
-		Common_Draw("");
-		Common_Draw("Use %s and %s to select.", Common_BtnStr(BTN_UP), Common_BtnStr(BTN_DOWN));
-		Common_Draw("Press %s to confirm.", Common_BtnStr(BTN_ACTION1));
-		Common_Draw("");
-		for (int i = 0; i < numdrivers; i++)
-		{
-			char name[256];
+        Common_Draw("==================================================");
+        Common_Draw("Multiple System Example.");
+        Common_Draw("Copyright (c) Firelight Technologies 2004-2019.");
+	Common_Draw("Modified for Demonstration by Keith Hussain");
+        Common_Draw("==================================================");
+        Common_Draw("");
+        Common_Draw("Choose a device for system: 0x%p", system);
+        Common_Draw("");
+        Common_Draw("Use %s and %s to select.", Common_BtnStr(BTN_UP), Common_BtnStr(BTN_DOWN));
+        Common_Draw("Press %s to confirm.", Common_BtnStr(BTN_ACTION1));
+        Common_Draw("");
+        for (int i = 0; i < numdrivers; i++)
+        {
+            char name[256];
 
-			result = system->getDriverInfo(i, name, sizeof(name), 0, 0, 0, 0);
-			ERRCHECK(result);
+            result = system->getDriverInfo(i, name, sizeof(name), 0, 0, 0, 0);
+            ERRCHECK(result);
 
-			Common_Draw("[%c] - %d. %s", selectedindex == i ? 'X' : ' ', i, name);
-		}
+            Common_Draw("[%c] - %d. %s", selectedindex == i ? 'X' : ' ', i, name);
+        }
 
-		Common_Sleep(50);
-	} while (!Common_BtnPress(BTN_ACTION1) && !Common_BtnPress(BTN_QUIT));
+        Common_Sleep(50);
+    } while (!Common_BtnPress(BTN_ACTION1) && !Common_BtnPress(BTN_QUIT));
 
-	*driver = selectedindex;
+    *driver = selectedindex;
 
-	return FMOD_OK;
+    return FMOD_OK;
 }
 
-int main()
+int FMOD_Main()
 {
-	FMOD::System     *systemA, *systemB;				// Initialize the different speakers
+    FMOD::System     *systemA, *systemB;				// Initialize the different speakers
 	FMOD::Sound      *soundA, *soundB;					// One sound will go to front speaker, one will go to back
 	FMOD::Channel    *channelA = 0, *channelB = 0;		// Instances of the sound playing (?)
 	FMOD_RESULT       result;							// Error checking thing
@@ -127,10 +123,10 @@ int main()
 	/*
 		Load 1 sample into each soundcard.
 	*/
-	result = systemA->createSound(Common_MediaPath("media/over-craterrevealL.wav"), FMOD_LOOP_OFF, 0, &soundA);
+	result = systemA->createSound(Common_MediaPath("test1.mp3"), FMOD_LOOP_OFF, 0, &soundA);
 	ERRCHECK(result);
 
-	result = systemB->createSound(Common_MediaPath("media/over-craterrevealR.wav"), FMOD_DEFAULT, 0, &soundB);
+	result = systemB->createSound(Common_MediaPath("test2.mp3"), FMOD_DEFAULT, 0, &soundB);
 	ERRCHECK(result);
 
 	/*
@@ -159,6 +155,36 @@ int main()
 			result = systemB->playSound(soundB, 0, 0, &channelB);
 			ERRCHECK(result);
 		}
+		
+		if (Common_BtnPress(BTN_ACTION4))
+		{
+			result = systemA->playSound(soundA, 0, true, &channelA);
+			ERRCHECK(result);
+
+			result = channelA->setMixLevelsOutput(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+			ERRCHECK(result);
+
+			result = channelA->setPaused(false);
+			ERRCHECK(result);
+
+			result = systemB->playSound(soundB, 0, true, &channelB);
+			ERRCHECK(result);
+
+			result = channelB->setMixLevelsOutput(0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+			ERRCHECK(result);
+
+			result = channelB->setPaused(false);
+			ERRCHECK(result);
+		}
+		
+		if (Common_BtnPress(BTN_ACTION5))
+		{
+				result = channelA->stop();
+				ERRCHECK(result);
+				result = channelB->stop();
+				ERRCHECK(result);
+		}
+		
 		result = systemA->update();
 		ERRCHECK(result);
 		result = systemB->update();
@@ -176,11 +202,14 @@ int main()
 			Common_Draw("==================================================");
 			Common_Draw("Multiple System Example.");
 			Common_Draw("Copyright (c) Firelight Technologies 2004-2019.");
+			Common_Draw("Modified for Demonstration by Keith Hussain");
 			Common_Draw("==================================================");
 			Common_Draw("");
 			Common_Draw("Press %s to play a sound on device A", Common_BtnStr(BTN_ACTION1));
 			Common_Draw("Press %s to play a sound on device B", Common_BtnStr(BTN_ACTION2));
 			Common_Draw("Press %s to play both sounds simultaneously", Common_BtnStr(BTN_ACTION3));
+			Common_Draw("Press %s to play both sounds simultaneously, with L/R speaker separation", Common_BtnStr(BTN_ACTION4));
+			Common_Draw("Press %s to stop playback (only press when 1 channel is playing for A & B)!!", Common_BtnStr(BTN_ACTION5));
 			Common_Draw("Press %s to quit", Common_BtnStr(BTN_QUIT));
 			Common_Draw("");
 			Common_Draw("Channels playing on A: %d", channelsplayingA);
@@ -190,25 +219,24 @@ int main()
 		Common_Sleep(50);
 	} while (!Common_BtnPress(BTN_QUIT));
 
-	/*
-	Shut down
-	*/
-	result = soundA->release();
-	ERRCHECK(result);
-	result = systemA->close();
-	ERRCHECK(result);
-	result = systemA->release();
-	ERRCHECK(result);
+    /*
+        Shut down
+    */
+    result = soundA->release();
+    ERRCHECK(result);
+    result = systemA->close();
+    ERRCHECK(result);
+    result = systemA->release();
+    ERRCHECK(result);
 
-	result = soundB->release();
-	ERRCHECK(result);
-	result = systemB->close();
-	ERRCHECK(result);
-	result = systemB->release();
-	ERRCHECK(result);
+    result = soundB->release();
+    ERRCHECK(result);
+    result = systemB->close();
+    ERRCHECK(result);
+    result = systemB->release();
+    ERRCHECK(result);
 
-	Common_Close();
+    Common_Close();
 
-	return 0;
+    return 0;
 }
-
