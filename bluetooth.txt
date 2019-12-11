@@ -1,0 +1,5 @@
+Name of Device:		MAC Address:
+
+Anker Soundcore  	A0:E9:DB:09:19:D6
+BH100			00:11:67:11:2B:B0
+ATH-M50xBT		00:0A:45:0E:14:4F
